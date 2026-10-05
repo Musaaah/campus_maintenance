@@ -1,0 +1,74 @@
+{% extends "tickets/base.html" %}
+{% block title %}Request #{{ ticket.pk }}{% endblock %}
+{% block content %}
+<a href="{% url 'tickets:ticket_list' %}" class="text-decoration-none">&larr; Back to requests</a>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <h1 class="h4">#{{ ticket.pk }} &mdash; {{ ticket.title }}</h1>
+          <div class="text-nowrap">
+            {% include "tickets/_status_badge.html" with status=ticket.status label=ticket.get_status_display %}
+            {% include "tickets/_priority_badge.html" with priority=ticket.priority label=ticket.get_priority_display %}
+          </div>
+        </div>
+        <p class="mt-3">{{ ticket.description|linebreaksbr }}</p>
+        <hr>
+        <dl class="row mb-0 small">
+          <dt class="col-sm-4">Location</dt><dd class="col-sm-8">{{ ticket.location }}</dd>
+          <dt class="col-sm-4">Category</dt><dd class="col-sm-8">{{ ticket.get_category_display }}</dd>
+          <dt class="col-sm-4">Requested by</dt><dd class="col-sm-8">{{ ticket.created_by.get_full_name|default:ticket.created_by.get_username }}</dd>
+          <dt class="col-sm-4">Technician</dt>
+          <dd class="col-sm-8">{% if ticket.assigned_to %}{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.get_username }}{% else %}Not yet assigned{% endif %}</dd>
+          <dt class="col-sm-4">Submitted</dt><dd class="col-sm-8">{{ ticket.created_at|date:"j M Y, H:i" }}</dd>
+          <dt class="col-sm-4">Last updated</dt><dd class="col-sm-8">{{ ticket.updated_at|date:"j M Y, H:i" }}</dd>
+          {% if ticket.resolved_at %}
+          <dt class="col-sm-4">Resolved</dt><dd class="col-sm-8">{{ ticket.resolved_at|date:"j M Y, H:i" }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    {% if can_assign %}
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h6">{% if ticket.assigned_to %}Reassign technician{% else %}Assign technician{% endif %}</h2>
+        <form method="post" action="{% url 'tickets:ticket_assign' ticket.pk %}">
+          {% csrf_token %}
+          <label for="{{ assign_form.assigned_to.id_for_label }}" class="visually-hidden">Technician</label>
+          {{ assign_form.assigned_to }}
+          <button type="submit" class="btn btn-primary btn-sm mt-2">Assign</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if can_update %}
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h6">Update progress</h2>
+        <form method="post" action="{% url 'tickets:ticket_update_status' ticket.pk %}">
+          {% csrf_token %}
+          <label for="{{ status_form.status.id_for_label }}" class="visually-hidden">Status</label>
+          {{ status_form.status }}
+          <button type="submit" class="btn btn-primary btn-sm mt-2">Save status</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not can_assign and not can_update %}
+    <div class="card shadow-sm">
+      <div class="card-body small text-muted">
+        {% if ticket.status == 'RESOLVED' %}This request has been resolved.
+        {% else %}We will update this page as the request progresses.{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

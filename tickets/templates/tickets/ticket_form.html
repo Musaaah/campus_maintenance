@@ -1,0 +1,27 @@
+{% extends "tickets/base.html" %}
+{% block title %}New request{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <h1 class="h4 mb-1">Report a maintenance issue</h1>
+        <p class="text-muted">Tell us what is wrong and where. We will assign a technician and keep you updated.</p>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {{ form.non_field_errors }}
+          {% for field in form %}
+          <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary">Submit request</button>
+          <a href="{% url 'tickets:ticket_list' %}" class="btn btn-link">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

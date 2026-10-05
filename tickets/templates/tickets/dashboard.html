@@ -1,0 +1,64 @@
+{% extends "tickets/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Dashboard</h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg">
+    <div class="card shadow-sm h-100"><div class="card-body">
+      <div class="text-muted small">Total requests</div><div class="display-6">{{ total }}</div>
+    </div></div>
+  </div>
+  {% for s in status_counts %}
+  <div class="col-6 col-lg">
+    <a class="text-decoration-none text-reset" href="{% url 'tickets:ticket_list' %}?status={{ s.value }}">
+      <div class="card shadow-sm h-100"><div class="card-body">
+        <div class="text-muted small">{{ s.label }}</div><div class="display-6">{{ s.count }}</div>
+      </div></div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white fw-semibold">Needs assignment ({{ unassigned_count }})</div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light"><tr><th>#</th><th>Title</th><th>Priority</th><th>Requested by</th><th>Submitted</th></tr></thead>
+          <tbody>
+            {% for t in unassigned %}
+            <tr>
+              <td>{{ t.pk }}</td>
+              <td><a href="{% url 'tickets:ticket_detail' t.pk %}">{{ t.title }}</a><div class="small text-muted">{{ t.location }}</div></td>
+              <td>{% include "tickets/_priority_badge.html" with priority=t.priority label=t.get_priority_display %}</td>
+              <td>{{ t.created_by.get_full_name|default:t.created_by.get_username }}</td>
+              <td class="text-nowrap">{{ t.created_at|date:"j M Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">Everything is assigned.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white fw-semibold">Technician workload</div>
+      <ul class="list-group list-group-flush">
+        {% for tech in technicians %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ tech.get_full_name|default:tech.get_username }}</span>
+          <span class="badge text-bg-secondary">{{ tech.open_jobs }} open</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">No technicians yet. Add users to the Technician group.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
