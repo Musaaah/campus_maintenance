@@ -14,6 +14,14 @@
             {% include "tickets/_priority_badge.html" with priority=ticket.priority label=ticket.get_priority_display %}
           </div>
         </div>
+        {% with s=ticket.status %}
+        <div class="d-flex flex-wrap gap-2 mt-3 small" aria-label="Progress">
+          <span class="badge text-bg-success">&#10003; Submitted</span>
+          <span class="badge {% if s == 'PENDING' %}text-bg-light border text-muted{% elif s == 'ASSIGNED' %}text-bg-primary{% else %}text-bg-success{% endif %}">{% if s == 'IN_PROGRESS' or s == 'RESOLVED' %}&#10003; {% endif %}Assigned</span>
+          <span class="badge {% if s == 'IN_PROGRESS' %}text-bg-primary{% elif s == 'RESOLVED' %}text-bg-success{% else %}text-bg-light border text-muted{% endif %}">{% if s == 'RESOLVED' %}&#10003; {% endif %}In progress</span>
+          <span class="badge {% if s == 'RESOLVED' %}text-bg-success{% else %}text-bg-light border text-muted{% endif %}">{% if s == 'RESOLVED' %}&#10003; {% endif %}Resolved</span>
+        </div>
+        {% endwith %}
         <p class="mt-3">{{ ticket.description|linebreaksbr }}</p>
         <hr>
         <dl class="row mb-0 small">
@@ -37,12 +45,19 @@
     <div class="card shadow-sm mb-3">
       <div class="card-body">
         <h2 class="h6">{% if ticket.assigned_to %}Reassign technician{% else %}Assign technician{% endif %}</h2>
+        {% if assign_form.fields.assigned_to.queryset.exists %}
         <form method="post" action="{% url 'tickets:ticket_assign' ticket.pk %}">
           {% csrf_token %}
           <label for="{{ assign_form.assigned_to.id_for_label }}" class="visually-hidden">Technician</label>
           {{ assign_form.assigned_to }}
           <button type="submit" class="btn btn-primary btn-sm mt-2">Assign</button>
         </form>
+        {% else %}
+        <div class="alert alert-warning small mb-0">
+          No technicians exist yet. <a href="/admin/auth/user/add/">Create a user</a> and add them to the
+          <strong>Technician</strong> group (see <a href="/admin/auth/group/">Groups</a>), then refresh this page.
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
@@ -51,12 +66,18 @@
     <div class="card shadow-sm mb-3">
       <div class="card-body">
         <h2 class="h6">Update progress</h2>
-        <form method="post" action="{% url 'tickets:ticket_update_status' ticket.pk %}">
+        <form method="post" action="{% url 'tickets:ticket_update_status' ticket.pk %}" class="d-grid gap-2">
           {% csrf_token %}
-          <label for="{{ status_form.status.id_for_label }}" class="visually-hidden">Status</label>
-          {{ status_form.status }}
-          <button type="submit" class="btn btn-primary btn-sm mt-2">Save status</button>
+          {% if ticket.status == 'ASSIGNED' %}
+          <button type="submit" name="status" value="IN_PROGRESS" class="btn btn-primary">Start work (In Progress)</button>
+          {% endif %}
+          <button type="submit" name="status" value="RESOLVED" class="btn btn-success"
+                  onclick="return confirm('Mark this request as resolved?');">Mark as resolved</button>
         </form>
+        <p class="small text-muted mt-2 mb-0">
+          {% if ticket.status == 'ASSIGNED' %}Press &ldquo;Start work&rdquo; when you begin, so the requester can see progress.
+          {% else %}The requester can see that work is in progress.{% endif %}
+        </p>
       </div>
     </div>
     {% endif %}
